@@ -140,6 +140,8 @@ export function useRevertMutations(
 				const mutations = queue.concat(observer.takeRecords())
 				queue.length = 0
 
+				onMutationsRef.current(mutations.slice())
+
 				/**
 				 * OOPS OOPS OOPS BIG CONCEPTUAL PROBLEM:
 				 *
@@ -155,12 +157,10 @@ export function useRevertMutations(
 				 * phase, or after every revert, or right before we start watching for changes -- then
 				 * we dispatch our events using that saved DOM state before we do the reverts.
 				 */
-				for (const mutation of mutations.slice().reverse()) {
+				for (const mutation of mutations.reverse()) {
 					// Revert in reverse order
 					revertDOMMutation(mutation)
 				}
-
-				onMutationsRef.current(mutations)
 			}
 		}
 
@@ -222,10 +222,7 @@ export function useRevertMutations(
  * See also https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord
  */
 function revertDOMMutation(mutation: MutationRecord) {
-	console.warn([
-		"Reverted mutation of locked DOM tree. To allow, try `useMutable`",
-		mutation,
-	])
+	console.warn("Reverted mutation of locked DOM tree", mutation)
 
 	switch (mutation.type) {
 		case "attributes": {

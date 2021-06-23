@@ -10,7 +10,7 @@ import {
 	useRef,
 } from "react"
 import { MutableRegistry } from "./MutableRegistry"
-import { PolymorphicProps, Polymorphic, defaultElement } from "./polymorphic"
+import { PolymorphicProps, Polymorphic, defaultElement } from "./Polymorphic"
 import { OnMutations, MutationsEvent } from "./types"
 import { useMergeRefs } from "./useMergeRefs"
 import { mutationsContext, MutationsContext } from "./useMutations"
@@ -39,31 +39,18 @@ const implementation = function MutableRoot<E extends React.ElementType>(
 	const handleAllMutations = useCallback<LowLevelOnMutations>(
 		mutations => {
 			const stopPropagationSet = new Set<MutationRecord>()
-			const depthFirstListeners = Array.from(
-				registry.nodeToHandler.entries()
-			).sort(([a], [b]) => {
-				if (a === b) {
-					return 0
-				}
-
-				const position = b.compareDocumentPosition(a)
-				if (
-					position &
-					(Node.DOCUMENT_POSITION_PRECEDING |
-						Node.DOCUMENT_POSITION_CONTAINED_BY)
-				) {
-					return -1
-				}
-
-				return 1
-			})
-
-			for (const [node, handler] of depthFirstListeners) {
+			for (const [node, handler] of registry.depthFirstListeners) {
 				const filteredMutations = mutations.filter(mutation => {
 					if (stopPropagationSet.has(mutation)) {
 						return false
 					}
 
+					// TODO: mutations may change the DOM nesting structure as expected in depthFirstListeners.
+					//       we actually need to inspect the mutations array and compute the previous DOM hierarchy
+					//       so we can simulate event bubbling in the previous hierarchy, instead of relying
+					//       on the actual DOM structure post-mutation.
+					//
+					//       This is quite a tricky idea, actually...
 					return mutationIsInside(mutation, node)
 				})
 

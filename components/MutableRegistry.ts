@@ -3,6 +3,7 @@ import { OnMutations } from "./types";
 export class MutableRegistry {
   nodeToHandler = new Map<Node, OnMutations>()
   idToNode = new Map<object, Node>()
+  depthFirstListeners: Array<[Node, OnMutations]> = []
 
   /**
    * @param id A stable object representing a component instance
@@ -10,16 +11,43 @@ export class MutableRegistry {
    * @param onMutations Event handler
    */
   register(id: object, node: Node | null, onMutations: OnMutations) {
-    this.unregister(id)
+    this.unregister(id, false)
     this.idToNode.set(id, node)
     this.nodeToHandler.set(node, onMutations)
+    this.recompute()
     return () => this.unregister(id)
   }
 
-  unregister(id: object) {
+  unregister(id: object, recompute = true) {
     const node = this.idToNode.get(id)
     this.idToNode.delete(id)
     this.nodeToHandler.delete(node)
+    if (recompute) {
+      this.recompute()
+    }
+  }
+
+  recompute() {
+    const depthFirstListeners = Array.from(
+      this.nodeToHandler.entries()
+    ).sort(([a], [b]) => {
+      if (a === b) {
+        return 0
+      }
+
+      const position = b.compareDocumentPosition(a)
+      if (
+        position &
+        (Node.DOCUMENT_POSITION_PRECEDING |
+          Node.DOCUMENT_POSITION_CONTAINED_BY)
+      ) {
+        return -1
+      }
+
+      return 1
+    })
+
+    this.depthFirstListeners = depthFirstListeners
   }
 
   /**
