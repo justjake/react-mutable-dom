@@ -76,7 +76,7 @@ const observeOptions: MutationObserverInit = {
 	characterDataOldValue: true,
 }
 
-export type LowLevelOnMutations = (mutations: readonly MutationRecord[]) => void
+export type LowLevelOnMutations = (mutations: MutationRecord[]) => void
 
 /**
  * Revert all mutations within `root`. Use inside a contentEditable to prevent
