@@ -198,17 +198,17 @@ export class RevertedTree {
 			case "childList": {
 				let i = 0
 				for (i = mutation.removedNodes.length - 1; i >= 0; i--) {
-					// A removed node had its parent changed to a different value.
 					const removedNode = mutation.removedNodes[i]
-					this.getRevertedNode(removedNode).previousParent = mutation.target
+					// A removed node had its parent changed to a different value.
+					// Set it back to the previous parent
+					this.getRevertedNode(removedNode).setPreviousParent(mutation.target)
 				}
 				for (i = mutation.addedNodes.length - 1; i >= 0; i--) {
-					const node = mutation.addedNodes[i]
-					if (node.parentNode) {
-						// Nodes added here must have been removed from elsewhere...
-						// Is it right to revert these? We could end up losing mutations if we
-						// do so...
-					}
+					const addedNode = mutation.addedNodes[i]
+					// Nodes added here must have been removed from elsewhere...
+					// Is it right to revert these? We could end up losing mutations if we
+					// do so...
+					this.getRevertedNode(addedNode).setPreviousParent(null)
 				}
 				return
 			}
