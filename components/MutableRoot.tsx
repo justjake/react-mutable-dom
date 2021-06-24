@@ -158,6 +158,23 @@ export const MutableRoot = forwardRef(implementation) as <
  * I'm starting to understand why ProseMirror only uses DOM mutation events to
  * decide what parts of the tree to re-parse entirely, instead of trying to
  * assign a semantic meaning to each mutation event.
+ *
+ * Maybe what we should do, is revert all the mutations (as we do here),
+ * and then step through them in order, re-applying the mutation to our
+ * reverted tree and then bubbling each event in order? Yikes...
+ *
+ * const tree = revertAll(mutations)
+ * while (mutations.length) {
+ *   const mutation = mutations.shift()
+ *   tree.bubble(mutation)
+ *   tree.apply(mutation)
+ * }
+ *
+ * That's awkward because to understand an individual mutation event, you might
+ * need the remaining mutations in a batch, right? Or is it silly to try to
+ * batch mutations in this system? I guess any consumer of mutation events
+ * needs to either handle each event atomically, or use their own internal
+ * queue where partially understood events wait for completion.
  */
 export class RevertedTree {
 	nodeMap = new WeakMap<Node, RevertedNode<Node>>()
@@ -173,6 +190,7 @@ export class RevertedTree {
 
 	// TODO: We should consider memoization or some other form of optimization here.
 	// Mutation lists can be long, and looking up the tree is O(n) of depth...
+	// TODO: as a basic optimization, we should stop bubbling at a given root node.
 	mutationIsInside(mutation: MutationRecord, node: Node): boolean {
 		if (mutation.target === node) {
 			return true
